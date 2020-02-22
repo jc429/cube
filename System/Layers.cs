@@ -8,7 +8,7 @@ public static class Layers {
 		LayerMask groundmask = 0;
 		//have fun hard coding layers here 
 		groundmask |= 1 << 0;	//default
-		groundmask |= 1 << 11;	//levelGeo
+		groundmask |= 1 << 8;	//solids
 
 	/*	groundmask |= 1 << 10;
 		if (!ignorePlatforms) {
@@ -20,10 +20,6 @@ public static class Layers {
 
 	public static LayerMask GetWaterMask() {
 		return 1 << 4;
-	}
-
-	public static LayerMask GetFrogMask() {
-		return 1 << 8;
 	}
 
 	public static LayerMask GetPuzzleObjectMask() {

@@ -18,11 +18,12 @@ public class Movement : MonoBehaviour
 	Quaternion startRotation;
 	Quaternion endRotation;
 	Timer moveTimer;
-	const float moveDuration = 0.6f;
+	const float moveDuration = 0.16f;
+	Spin currentSpin;
 
 	int gMask = Layers.GetSolidsMask(true);
 	bool[] floorsTouching = {false, false, false, false};
-	Vector3 floorDir;
+	Direction floorDir;
 
 
 	// Start is called before the first frame update
@@ -36,12 +37,14 @@ public class Movement : MonoBehaviour
 		if(isMoving){
 			moveTimer.AdvanceTimer(Time.deltaTime);
 			transform.position = Vector3.Lerp(startPos, endPos, moveTimer.CompletionPercentage) 
-				+  (floorDir * -0.2f * Mathf.Sin(Mathf.PI * moveTimer.CompletionPercentage));
+				+  (floorDir.ToVector3() * -0.2f * Mathf.Sin(Mathf.PI * moveTimer.CompletionPercentage));
 			transform.rotation = Quaternion.Slerp(startRotation, endRotation, moveTimer.CompletionPercentage);
 			if(moveTimer.IsFinished){
 				transform.position = endPos;
-				isMoving = false;
-				moveTimer.Reset();
+				if(CheckFollowThrough()){
+					isMoving = false;
+					moveTimer.Reset();
+				}
 			}
 		}
 		else {
@@ -72,73 +75,111 @@ public class Movement : MonoBehaviour
 		if(VirtualController.LeftDPadPressed(true)
 		&& !VirtualController.RightDPadPressed(true)){
 			if(floorsTouching[(int)Direction.S] && !floorsTouching[(int)Direction.N]){
-				MoveCCW(Direction.W);
+				floorDir = Direction.S;
+				Move(Direction.W, Spin.CCW);
 			}
 			else if(floorsTouching[(int)Direction.N] && !floorsTouching[(int)Direction.S]){
-				MoveCW(Direction.W);
+				floorDir = Direction.N;
+				Move(Direction.W, Spin.CW);
 			}
 		}
 		if(VirtualController.RightDPadPressed(true)
 		&& !VirtualController.LeftDPadPressed(true)){
 			if(floorsTouching[(int)Direction.S] && !floorsTouching[(int)Direction.N]){
-				MoveCW(Direction.E);
+				floorDir = Direction.S;
+				Move(Direction.E, Spin.CW);
 			}
 			else if(floorsTouching[(int)Direction.N] && !floorsTouching[(int)Direction.S]){
-				MoveCCW(Direction.E);
+				floorDir = Direction.N;
+				Move(Direction.E, Spin.CCW);
 			}
 		}
-
+		if(VirtualController.UpDPadPressed(true)
+		&& !VirtualController.DownDPadPressed(true)){
+			if(floorsTouching[(int)Direction.W] && !floorsTouching[(int)Direction.E]){
+				floorDir = Direction.W;
+				Move(Direction.N, Spin.CCW);
+			}
+			else if(floorsTouching[(int)Direction.E] && !floorsTouching[(int)Direction.W]){
+				floorDir = Direction.E;
+				Move(Direction.N, Spin.CW);
+			}
+		}
+		if(VirtualController.DownDPadPressed(true)
+		&& !VirtualController.UpDPadPressed(true)){
+			if(floorsTouching[(int)Direction.W] && !floorsTouching[(int)Direction.E]){
+				floorDir = Direction.W;
+				Move(Direction.S, Spin.CW);
+			}
+			else if(floorsTouching[(int)Direction.E] && !floorsTouching[(int)Direction.W]){
+				floorDir = Direction.E;
+				Move(Direction.S, Spin.CCW);
+			}
+		}
 	}
 
-	// moves the cube one tile left
-	void MoveCCW(Direction d){
-		Vector3 dir = d.ToVector3();
+	void Move(Direction d, Spin s){
 		startPos = transform.position;
-		startRotation = transform.rotation;
-		endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+		Vector3 dir = d.ToVector3();
 		bool rayHit = CastRayStack(startPos, dir, 1, gMask);
-		if(!rayHit){
-			floorDir = Vector3.down;
+		if(!rayHit){	//if the space forward is free
 			endPos = startPos + dir;
 			moveTimer.SetDuration(moveDuration);
+			currentSpin = s;
+			startRotation = transform.rotation;
+			if(s == Spin.CW){
+				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
+			}
+			else if(s == Spin.CCW){
+				endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+			}
 			isMoving = true;
 		}
 		else{
-			// if we hit a wall maybe we can climb up it
-			dir = Vector3.up;
+			Direction d2 = (s == Spin.CW) ? d.Previous() : d.Next();
+			dir = d2.ToVector3();
 			rayHit = CastRayStack(startPos, dir, 1, gMask);
 			if(!rayHit){
-				floorDir = Vector3.left;
+				floorDir = d;
 				endPos = startPos + dir;
 				moveTimer.SetDuration(moveDuration);
+				currentSpin = s;
+				startRotation = transform.rotation;
+				if(s == Spin.CW){
+					endRotation = startRotation * Quaternion.Euler(0, 0, -90);
+				}
+				else if(s == Spin.CCW){
+					endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+				}
 				isMoving = true;
 			}
 		}
 	}
 
-	void MoveCW(Direction d){
-		Vector3 dir = d.ToVector3();
-		startPos = transform.position;
-		bool rayHit = CastRayStack(startPos, dir, 1, gMask);
-		startRotation = transform.rotation;
-		endRotation = startRotation * Quaternion.Euler(0, 0, -90);
-		if(!rayHit){
-			floorDir = Vector3.down;
+	bool CheckFollowThrough(){
+		bool doneMoving = false;
+		Vector3 dir = floorDir.ToVector3();
+		bool rayHit = CastRayStack(transform.position, dir, 1, gMask);
+		if(!rayHit){		//no ground below us
+			startPos = transform.position;
 			endPos = startPos + dir;
+			moveTimer.Reset();
 			moveTimer.SetDuration(moveDuration);
+			startRotation = transform.rotation;
+			if(currentSpin == Spin.CW){
+				floorDir = floorDir.Next();
+				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
+			}
+			else if(currentSpin == Spin.CCW){
+				floorDir = floorDir.Previous();
+				endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+			}
 			isMoving = true;
 		}
 		else{
-			// if we hit a wall maybe we can climb up it
-			dir = Vector3.up;
-			rayHit = CastRayStack(startPos, dir, 1, gMask);
-			if(!rayHit){
-				floorDir = Vector3.right;
-				endPos = startPos + dir;
-				moveTimer.SetDuration(moveDuration);
-				isMoving = true;
-			}
+			doneMoving = true;
 		}
+		return doneMoving;
 	}
 
 	void ActivateMagNodes(){

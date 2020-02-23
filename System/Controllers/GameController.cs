@@ -7,6 +7,10 @@ public class GameController : MonoBehaviour
 	public static bool DEBUG_MODE = false;
 	public static GameController instance; 
 
+	public static AudioController audioController;
+	public static CameraController cameraController;
+	public static ParticleController particleController;
+
 
 	public Movement player;
 
@@ -26,12 +30,12 @@ public class GameController : MonoBehaviour
 	}
 
 	void Initialize(){
-		VirtualController.Initialize();
+		InputController.Initialize();
 	}
 
 	void Update(){
-		VirtualController.CaptureInputs();
-		if (VirtualController.PauseButtonPressed()) {
+		InputController.CaptureInputs();
+		if (InputController.PauseButtonPressed()) {
 			
 			if (pauseMenu != null) {
 				if (optionsMenu != null && optionsMenu.open) {
@@ -42,7 +46,7 @@ public class GameController : MonoBehaviour
 				}
 			}
 		}
-		if (VirtualController.ResetButtonPressed()) {
+		if (InputController.ResetButtonPressed()) {
 			//ResetGame();
 		}
 		if(DEBUG_MODE){

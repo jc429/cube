@@ -14,7 +14,7 @@ public enum InputID{
 	Reset		= (1<<8)
 }
 
-public static class VirtualController {
+public static class InputController {
 
 	static int inputQueueLength = 10;
 
@@ -85,60 +85,55 @@ public static class VirtualController {
 		return Input.GetAxisRaw("Vertical");
 	}
 
-	public static bool UpDPadPressed(bool held = false){
-		return CheckCurrentInput(InputID.Up);
-		if(held){
-			return (Input.GetKey(KeyCode.W)||Input.GetKey(KeyCode.UpArrow));
+	public static bool UpDPadPressed(bool queued = false){
+		if(queued){
+			return CheckQueuedInput(InputID.Up);
 		}else{
-			return (Input.GetKeyDown(KeyCode.W)||Input.GetKeyDown(KeyCode.UpArrow));
+			return CheckCurrentInput(InputID.Up);
 		}
 	}
 
-	public static bool DownDPadPressed(bool held = false){
-		return CheckCurrentInput(InputID.Down);
-		if(held){
-			return (Input.GetKey(KeyCode.S)||Input.GetKey(KeyCode.DownArrow));
+	public static bool DownDPadPressed(bool queued = false){
+		if(queued){
+			return CheckQueuedInput(InputID.Down);
 		}else{
-			return (Input.GetKeyDown(KeyCode.S)||Input.GetKeyDown(KeyCode.DownArrow));
+			return CheckCurrentInput(InputID.Down);
 		}
 	}
 
-	public static bool LeftDPadPressed(bool held = false){
-		return CheckCurrentInput(InputID.Left);
-		if(held){
-			return (Input.GetKey(KeyCode.A)||Input.GetKey(KeyCode.LeftArrow));
-		}
-		else{
-			return (Input.GetKeyDown(KeyCode.A)||Input.GetKeyDown(KeyCode.LeftArrow));
+	public static bool LeftDPadPressed(bool queued = false){
+		if(queued){
+			return CheckQueuedInput(InputID.Left);
+		}else{
+			return CheckCurrentInput(InputID.Left);
 		}
 	}
 
-	public static bool RightDPadPressed(bool held = false){
-		return CheckCurrentInput(InputID.Right);
-		if(held){
-			return (Input.GetKey(KeyCode.D)||Input.GetKey(KeyCode.RightArrow));
+	public static bool RightDPadPressed(bool queued = false){
+		if(queued){
+			return CheckQueuedInput(InputID.Right);
 		}else{
-			return (Input.GetKeyDown(KeyCode.D)||Input.GetKeyDown(KeyCode.RightArrow));
+			return CheckCurrentInput(InputID.Right);
 		}
 	}
 
 	public static Vector3 GetDirectionHeld(){
 		Vector3 v = Vector3.zero;
-		v.x += RightDPadPressed(true) ?  1 : 0;
-		v.x += LeftDPadPressed(true)  ? -1 : 0;
-		v.y += UpDPadPressed(true)    ?  1 : 0;
-		v.y += DownDPadPressed(true)  ? -1 : 0;
+		v.x += RightDPadPressed() ?  1 : 0;
+		v.x += LeftDPadPressed()  ? -1 : 0;
+		v.y += UpDPadPressed()    ?  1 : 0;
+		v.y += DownDPadPressed()  ? -1 : 0;
 		return v;
 	}
 
 	/**********************************************************************************/
 
-	public static bool JumpButtonPressed(bool held = false){
-		return CheckQueuedInput(InputID.Jump);
-
-		return (Input.GetButtonDown("Jump"));
-
-		
+	public static bool JumpButtonPressed(bool queued = true){
+		if(queued){
+			return CheckQueuedInput(InputID.Jump);
+		}else{
+			return CheckCurrentInput(InputID.Jump);
+		}
 	}
 
 	public static bool ActionButtonPressed(bool held = false){

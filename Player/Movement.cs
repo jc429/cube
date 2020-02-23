@@ -32,11 +32,14 @@ public class Movement : MonoBehaviour
 	Quaternion startRotation;
 	Quaternion endRotation;	
 	// dashing
-	float dashSpeed; 
+	float dashSpeed = 20f; 
 
 	bool inputHeld;
+	bool hasStepped;
 	Direction holdDir;
 
+	[SerializeField]
+	[NamedArrayAttribute (new string[] {"North", "East", "South", "West"})]
 	bool[] floorsTouching = {false, false, false, false};
 	Direction floorDir;
 
@@ -49,6 +52,7 @@ public class Movement : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		CheckFloor();
 		if(IsMoving){
 			if(moveState == MoveState.Stepping){
 				stepTimer.AdvanceTimer(Time.deltaTime);
@@ -65,6 +69,8 @@ public class Movement : MonoBehaviour
 					}
 					else{
 						if(!endStep){
+							GameController.particleController.SpawnDustParticlesLight(transform.position, floorDir.Opposite());
+							GameController.audioController.PlayThud();
 							endStep = true;
 							stepTimer.Reset();
 							stepTimer.SetDuration(stepEndDuration);
@@ -73,13 +79,24 @@ public class Movement : MonoBehaviour
 							endStep = false;
 							moveState = MoveState.Idle;
 							stepTimer.Reset();
+							if(inputHeld){
+								if(((holdDir == Direction.E) && (InputController.GetDirectionHeld().x > 0))
+								|| ((holdDir == Direction.W) && (InputController.GetDirectionHeld().x < 0))
+								|| ((holdDir == Direction.N) && (InputController.GetDirectionHeld().y > 0))
+								|| ((holdDir == Direction.S) && (InputController.GetDirectionHeld().y < 0))){
+									Move(curMoveDir, currentSpin);
+								}
+							}
 						}
 					}					
 				}
 			}
 			else if(moveState == MoveState.Dashing){
-				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.6f, gMask);
+				_rigidbody.AddForce(dashSpeed * curMoveDir.ToVector3() * Time.deltaTime, ForceMode.VelocityChange);
+				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.8f, gMask);
 				if(rayHit){
+					GameController.particleController.SpawnDustParticles(transform.position, curMoveDir.Opposite());
+					GameController.audioController.PlayThud();
 					_rigidbody.velocity = Vector3.zero;
 					AlignToGrid();
 					moveState = MoveState.Idle;
@@ -89,11 +106,10 @@ public class Movement : MonoBehaviour
 		}
 		else {
 			AlignToGrid();
-			CheckFloor();
 			AttemptMovement();
 		}
 		if(inputHeld){
-			if(VirtualController.GetDirectionHeld() != holdDir.ToVector3()){
+			if(InputController.GetDirectionHeld() != holdDir.ToVector3()){
 				inputHeld = false;
 			}
 		}
@@ -117,20 +133,12 @@ public class Movement : MonoBehaviour
 	}
 
 	void AttemptMovement(){
-		if(VirtualController.JumpButtonPressed()){
+		if(InputController.JumpButtonPressed()){
 			Launch(floorDir.Opposite());
 		}
-		else if(inputHeld){
-			if(((holdDir == Direction.E) && (VirtualController.GetDirectionHeld().x > 0))
-			|| ((holdDir == Direction.W) && (VirtualController.GetDirectionHeld().x < 0))
-			|| ((holdDir == Direction.N) && (VirtualController.GetDirectionHeld().y > 0))
-			|| ((holdDir == Direction.S) && (VirtualController.GetDirectionHeld().y < 0))){
-				Move(curMoveDir, currentSpin);
-			}
-		}
 		else{
-			if(VirtualController.GetDirectionHeld().x < 0){
-				if(floorDir != Direction.W && floorDir != Direction.E){
+			if(InputController.GetDirectionHeld().x < 0){
+				if(!floorsTouching[(int)Direction.W]){
 					inputHeld = true;
 					holdDir = Direction.W;
 					if(floorsTouching[(int)Direction.S] && !floorsTouching[(int)Direction.N]){
@@ -143,8 +151,8 @@ public class Movement : MonoBehaviour
 					}
 				}
 			}
-			else if(VirtualController.GetDirectionHeld().x > 0){
-				if(floorDir != Direction.W && floorDir != Direction.E){
+			else if(InputController.GetDirectionHeld().x > 0){
+				if(!floorsTouching[(int)Direction.E]){
 					inputHeld = true;
 					holdDir = Direction.E;
 					if(floorsTouching[(int)Direction.S] && !floorsTouching[(int)Direction.N]){
@@ -159,8 +167,8 @@ public class Movement : MonoBehaviour
 					}
 				}
 			}
-		 	if(VirtualController.GetDirectionHeld().y > 0){
-				if(floorDir != Direction.N && floorDir != Direction.S){
+		 	if(InputController.GetDirectionHeld().y > 0){
+				if(!floorsTouching[(int)Direction.N]){
 					inputHeld = true;
 					holdDir = Direction.N;
 					if(floorsTouching[(int)Direction.W] && !floorsTouching[(int)Direction.E]){
@@ -175,8 +183,8 @@ public class Movement : MonoBehaviour
 					}
 				}
 			}
-			else if(VirtualController.GetDirectionHeld().y < 0){
-				if(floorDir != Direction.N && floorDir != Direction.S){
+			else if(InputController.GetDirectionHeld().y < 0){
+				if(!floorsTouching[(int)Direction.S]){
 					inputHeld = true;
 					holdDir = Direction.S;
 					if(floorsTouching[(int)Direction.W] && !floorsTouching[(int)Direction.E]){
@@ -240,7 +248,7 @@ public class Movement : MonoBehaviour
 		bool rayHit = CastRayStack(transform.position, curMoveDir, 1, gMask);
 		if(rayHit){
 			doneMoving = true;
-			floorDir = curMoveDir;
+			//floorDir = curMoveDir;
 			return !doneMoving;
 		}
 
@@ -276,10 +284,11 @@ public class Movement : MonoBehaviour
 		if(rayHit){
 			return;
 		}
-		float launchForce = 20f;
-		_rigidbody.AddForce(launchForce * dir.ToVector3(), ForceMode.Impulse);
+		_rigidbody.AddForce(dashSpeed * dir.ToVector3(), ForceMode.Impulse);
 		moveState = MoveState.Dashing;
 		curMoveDir = dir;
+		InputController.ClearInputs();
+		inputHeld = false;
 	}
 
 	void ClearMovementParameters(){
@@ -340,6 +349,37 @@ public class Movement : MonoBehaviour
 
 	bool CastRayStack(Vector3 origin, Direction dir, float len, int mask){
 		return CastRayStack(origin, dir.ToVector3(), len, mask);
+	}
+
+	bool CastRayStack(Vector3 origin, Vector3 dir, float len, out float hitLen, int mask){
+		const int numRays = 5;
+		if(len == 0){
+			hitLen = 0;
+			return false;
+		}
+		RaycastHit r;
+		float[] distlist = new float[numRays];
+
+		for(int i = 0; i < numRays; i++){
+			float height = -0.45f + (0.225f * i);
+			Physics.Raycast(origin + new Vector3(height * dir.y, height * dir.x, 0), dir, out r, len, mask);
+			
+			Debug.DrawRay(origin + new Vector3(height * dir.y, height * dir.x, 0), len * dir, ((r.distance == 0) ? Color.white : Color.cyan));
+			distlist[i] = r.distance;
+		}
+		
+		float shortest = float.MaxValue;
+		foreach (float f in distlist) {
+			if (f > 0){
+				shortest = Mathf.Min(shortest, f);
+			}
+		}
+		hitLen = shortest;
+		return (shortest > 0 && shortest < float.MaxValue) ? true : false;
+	}
+
+	bool CastRayStack(Vector3 origin, Direction dir, float len, out float hitLen, int mask){
+		return CastRayStack(origin, dir.ToVector3(), len, out hitLen, mask);
 	}
 
 }

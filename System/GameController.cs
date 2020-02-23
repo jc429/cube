@@ -8,7 +8,7 @@ public class GameController : MonoBehaviour
 	public static GameController instance; 
 
 
-	public PlayerMovement player;
+	public Movement player;
 
 	public OptionsMenu optionsMenu;
 	public PauseMenu pauseMenu;
@@ -22,9 +22,15 @@ public class GameController : MonoBehaviour
 		else if(instance != this) {
 			Destroy(this.gameObject);
 		}
+		Initialize();
+	}
+
+	void Initialize(){
+		VirtualController.Initialize();
 	}
 
 	void Update(){
+		VirtualController.CaptureInputs();
 		if (VirtualController.PauseButtonPressed()) {
 			
 			if (pauseMenu != null) {

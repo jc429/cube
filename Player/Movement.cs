@@ -13,6 +13,7 @@ public class Movement : MonoBehaviour
 	Rigidbody _rigidbody{
 		get{ return GetComponent<Rigidbody>(); }
 	}
+	public GameObject model;
 
 	int gMask = Layers.GetSolidsMask(true);
 
@@ -47,6 +48,7 @@ public class Movement : MonoBehaviour
 	// Start is called before the first frame update
 	void Awake() {
 		stepTimer = new Timer();
+		GameController.instance.player = this;
 	}
 
 	// Update is called once per frame
@@ -59,7 +61,7 @@ public class Movement : MonoBehaviour
 				if(!endStep){
 					transform.position = Vector3.Lerp(startPos, endPos, stepTimer.CompletionPercentage) 
 					+  (floorDir.ToVector3() * -0.2f * Mathf.Sin(Mathf.PI * stepTimer.CompletionPercentage));
-					transform.rotation = Quaternion.Slerp(startRotation, endRotation, stepTimer.CompletionPercentage);
+					model.transform.rotation = Quaternion.Slerp(startRotation, endRotation, stepTimer.CompletionPercentage);
 				}				
 				if(stepTimer.IsFinished){
 					transform.position = endPos;
@@ -71,6 +73,7 @@ public class Movement : MonoBehaviour
 						if(!endStep){
 							GameController.particleController.SpawnDustParticlesLight(transform.position, floorDir.Opposite());
 							GameController.audioController.PlayThud();
+							GameController.cameraController.StepShake(floorDir);
 							endStep = true;
 							stepTimer.Reset();
 							stepTimer.SetDuration(stepEndDuration);
@@ -93,11 +96,14 @@ public class Movement : MonoBehaviour
 			}
 			else if(moveState == MoveState.Dashing){
 				_rigidbody.AddForce(dashSpeed * curMoveDir.ToVector3() * Time.deltaTime, ForceMode.VelocityChange);
-				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.8f, gMask);
+				float hitDist;
+				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.8f, out hitDist, gMask);
 				if(rayHit){
 					GameController.particleController.SpawnDustParticles(transform.position, curMoveDir.Opposite());
 					GameController.audioController.PlayThud();
+					GameController.cameraController.CrashShake(curMoveDir);
 					_rigidbody.velocity = Vector3.zero;
+					transform.position += curMoveDir.ToVector3() * (hitDist - 0.5f);
 					AlignToGrid();
 					moveState = MoveState.Idle;
 					floorDir = curMoveDir;
@@ -212,7 +218,7 @@ public class Movement : MonoBehaviour
 			stepTimer.SetDuration(stepDuration);
 			currentSpin = s;
 			curMoveDir = d;
-			startRotation = transform.rotation;
+			startRotation = model.transform.rotation;
 			if(s == Spin.CW){
 				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
 			}
@@ -231,7 +237,7 @@ public class Movement : MonoBehaviour
 				stepTimer.SetDuration(stepDuration);
 				currentSpin = s;
 				curMoveDir = d2;
-				startRotation = transform.rotation;
+				startRotation = model.transform.rotation;
 				if(s == Spin.CW){
 					endRotation = startRotation * Quaternion.Euler(0, 0, -90);
 				}
@@ -260,7 +266,7 @@ public class Movement : MonoBehaviour
 			curMoveDir = floorDir;
 			stepTimer.Reset();
 			stepTimer.SetDuration(stepDuration);
-			startRotation = transform.rotation;
+			startRotation = model.transform.rotation;
 			if(currentSpin == Spin.CW){
 				floorDir = floorDir.Next();
 				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
@@ -294,8 +300,8 @@ public class Movement : MonoBehaviour
 	void ClearMovementParameters(){
 		startPos = transform.position;
 		endPos = transform.position;
-		startRotation = transform.rotation;
-		endRotation = transform.rotation;
+		startRotation = model.transform.rotation;
+		endRotation = model.transform.rotation;
 		stepTimer.SetActive(false);
 	}
 

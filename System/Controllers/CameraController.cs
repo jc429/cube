@@ -4,6 +4,14 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+	public Transform cameraRig; 
+
+	bool isShaking;
+	Timer shakeTimer = new Timer();
+	Direction shakeDir;
+
+	float shakeAmplitude;
+	float shakeSpeed;
     
 	void Awake(){
 		if(GameController.cameraController == null) {
@@ -17,10 +25,37 @@ public class CameraController : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		if(Input.GetKeyDown(KeyCode.C)){
 			
+		}
+		if(isShaking){
+			shakeTimer.AdvanceTimer(Time.deltaTime);
+			float f = shakeAmplitude * Mathf.Sin(shakeSpeed * shakeTimer.CompletionPercentage);
+			f *= (1f - shakeTimer.CompletionPercentage);
+			Vector3 v = shakeDir.ToVector3() * f;
+			cameraRig.transform.localPosition = v;
+			if(shakeTimer.IsFinished){
+				cameraRig.transform.localPosition = Vector3.zero;
+				isShaking = false;
+				shakeTimer.Reset();
+			}
+		}
 	}
 
-	public void Shake(int strength, Direction dir){
-		
+	public void Shake(Direction dir, int strength, float speed, float duration){
+		shakeAmplitude = 0.05f * (float)strength;
+		shakeSpeed = speed;
+		shakeTimer.SetDuration(duration);
+		shakeDir = dir;
+		isShaking = true;
+	}	
+
+	public void StepShake(Direction dir){
+		Shake(dir, 3, 15, 0.1f);
 	}
+	
+	public void CrashShake(Direction dir){
+		Shake(dir, 6, 15, 0.15f);
+	}
+
 }

@@ -5,6 +5,7 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
 	public Transform cameraRig; 
+	bool ShakeDisabled;			//TODO: turn into game setting
 
 	bool isShaking;
 	Timer shakeTimer = new Timer();
@@ -25,10 +26,7 @@ public class CameraController : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
-		if(Input.GetKeyDown(KeyCode.C)){
-			
-		}
-		if(isShaking){
+		if(isShaking && !ShakeDisabled){
 			shakeTimer.AdvanceTimer(Time.deltaTime);
 			float f = shakeAmplitude * Mathf.Sin(shakeSpeed * shakeTimer.CompletionPercentage);
 			f *= (1f - shakeTimer.CompletionPercentage);
@@ -43,6 +41,9 @@ public class CameraController : MonoBehaviour
 	}
 
 	public void Shake(Direction dir, int strength, float speed, float duration){
+		if(ShakeDisabled){
+			return;
+		}
 		shakeAmplitude = 0.05f * (float)strength;
 		shakeSpeed = speed;
 		shakeTimer.SetDuration(duration);

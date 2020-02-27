@@ -8,15 +8,20 @@ public enum MoveState{
 	Dashing
 }
 
+[DisallowMultipleComponent]
+[RequireComponent(typeof(Rigidbody))]
+[SelectionBase]
 public class Movement : MonoBehaviour
 {
 	Rigidbody _rigidbody{
 		get{ return GetComponent<Rigidbody>(); }
 	}
 	public GameObject model;
+	public BlastParticle blastParticles;
 
 	int gMask = Layers.GetSolidsMask(true);
 
+	[Header("Movement")]
 	MoveState moveState;
 	public bool IsMoving{
 		get { return moveState == MoveState.Stepping || moveState == MoveState.Dashing; }
@@ -99,14 +104,8 @@ public class Movement : MonoBehaviour
 				float hitDist;
 				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.8f, out hitDist, gMask);
 				if(rayHit){
-					GameController.particleController.SpawnDustParticles(transform.position, curMoveDir.Opposite());
-					GameController.audioController.PlayThud();
-					GameController.cameraController.CrashShake(curMoveDir);
-					_rigidbody.velocity = Vector3.zero;
 					transform.position += curMoveDir.ToVector3() * (hitDist - 0.5f);
-					AlignToGrid();
-					moveState = MoveState.Idle;
-					floorDir = curMoveDir;
+					EndDash();
 				}	
 			}
 		}
@@ -140,7 +139,7 @@ public class Movement : MonoBehaviour
 
 	void AttemptMovement(){
 		if(InputController.JumpButtonPressed()){
-			Launch(floorDir.Opposite());
+			AttemptDash(floorDir.Opposite());
 		}
 		else{
 			if(InputController.GetDirectionHeld().x < 0){
@@ -283,8 +282,12 @@ public class Movement : MonoBehaviour
 		return !doneMoving;
 	}
 
+	void EndStep(){
 
-	void Launch(Direction dir){
+	}
+
+
+	void AttemptDash(Direction dir){
 		ClearMovementParameters();
 		bool rayHit = CastRayStack(transform.position, dir, 1, gMask);
 		if(rayHit){
@@ -293,8 +296,21 @@ public class Movement : MonoBehaviour
 		_rigidbody.AddForce(dashSpeed * dir.ToVector3(), ForceMode.Impulse);
 		moveState = MoveState.Dashing;
 		curMoveDir = dir;
+		blastParticles.SetDirection(curMoveDir);
+		blastParticles.Play();
 		InputController.ClearInputs();
 		inputHeld = false;
+	}
+
+	void EndDash(){
+		GameController.particleController.SpawnDustParticles(transform.position, curMoveDir.Opposite());
+		GameController.audioController.PlayThud();
+		GameController.cameraController.CrashShake(curMoveDir);
+		blastParticles.Stop();
+		_rigidbody.velocity = Vector3.zero;
+		AlignToGrid();
+		moveState = MoveState.Idle;
+		floorDir = curMoveDir;
 	}
 
 	void ClearMovementParameters(){

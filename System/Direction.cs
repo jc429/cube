@@ -18,10 +18,10 @@ public static class DirectionExtensions {
 	}
 
 	public static int DegreesOfRotation(this Direction direction){
-		return (90 * (int)direction) % 360;
+		return (-90 * (int)direction) % 360;
 	}
 
-	public static Direction QuadDirectionFromDegrees(int degrees){
+	public static Direction DirectionFromDegrees(int degrees){
 		while(degrees < 0){
 			degrees = degrees + 360;
 		}

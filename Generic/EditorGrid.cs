@@ -6,7 +6,7 @@ public class EditorGrid : MonoBehaviour {
 	//snaps everything in unity to a grid
 
 
-	public float cell_size = 1f;
+	float cell_size = 1f;
 	private float x, y, z;
 
 	void Start() {

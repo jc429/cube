@@ -10,16 +10,26 @@ public enum MoveState{
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(ArmManager))]
 [SelectionBase]
 public class Movement : MonoBehaviour
 {
 	Rigidbody _rigidbody{
 		get{ return GetComponent<Rigidbody>(); }
 	}
+	ArmManager _armManager{
+		get{ return GetComponent<ArmManager>(); }
+	}
 	public GameObject model;
+	[Space(4)]
 	public BlastParticle blastParticles;
 
 	int gMask = Layers.GetSolidsMask(true);
+
+	Direction orientation = Direction.N;
+	public Direction Orientation{
+		get{ return orientation; }
+	}
 
 	[Header("Movement")]
 	MoveState moveState;
@@ -109,10 +119,12 @@ public class Movement : MonoBehaviour
 				}	
 			}
 		}
-		else {
+		else {		// if not moving
 			AlignToGrid();
 			AttemptMovement();
+			CheckArmInputs();
 		}
+		
 		if(inputHeld){
 			if(InputController.GetDirectionHeld() != holdDir.ToVector3()){
 				inputHeld = false;
@@ -220,14 +232,16 @@ public class Movement : MonoBehaviour
 			startRotation = model.transform.rotation;
 			if(s == Spin.CW){
 				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
+				orientation = orientation.NextCW();
 			}
 			else if(s == Spin.CCW){
 				endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+				orientation = orientation.NextCCW();
 			}
 			moveState = MoveState.Stepping;
 		}
 		else{
-			Direction d2 = (s == Spin.CW) ? d.Previous() : d.Next();
+			Direction d2 = (s == Spin.CW) ? d.NextCCW() : d.NextCW();
 			dir = d2.ToVector3();
 			rayHit = CastRayStack(startPos, dir, 1, gMask);
 			if(!rayHit){
@@ -239,9 +253,11 @@ public class Movement : MonoBehaviour
 				startRotation = model.transform.rotation;
 				if(s == Spin.CW){
 					endRotation = startRotation * Quaternion.Euler(0, 0, -90);
+					orientation = orientation.NextCW();
 				}
 				else if(s == Spin.CCW){
 					endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+					orientation = orientation.NextCCW();
 				}
 				moveState = MoveState.Stepping;
 			}
@@ -267,11 +283,11 @@ public class Movement : MonoBehaviour
 			stepTimer.SetDuration(stepDuration);
 			startRotation = model.transform.rotation;
 			if(currentSpin == Spin.CW){
-				floorDir = floorDir.Next();
+				floorDir = floorDir.NextCW();
 				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
 			}
 			else if(currentSpin == Spin.CCW){
-				floorDir = floorDir.Previous();
+				floorDir = floorDir.NextCCW();
 				endRotation = startRotation * Quaternion.Euler(0, 0, 90);
 			}
 			moveState = MoveState.Stepping;
@@ -321,25 +337,27 @@ public class Movement : MonoBehaviour
 		stepTimer.SetActive(false);
 	}
 
-
-	void ActivateMagNodes(){
-
-	}
-	
-	void MagPush(){
-
-	}
-
-	void MagPull(){
-
-
-	}
-
-	void MagRotateCCW(){
-
-	}
-
-	void MagRotateCW(){
+	void CheckArmInputs(){
+		if(InputController.FaceButtonNorthPressed(false)){
+			_armManager.GetArm(Direction.N).Extend();
+		}else{
+			_armManager.GetArm(Direction.N).Retract();
+		}
+		if(InputController.FaceButtonSouthPressed(false)){
+			_armManager.GetArm(Direction.S).Extend();
+		}else{
+			_armManager.GetArm(Direction.S).Retract();
+		}
+		if(InputController.FaceButtonWestPressed(false)){
+			_armManager.GetArm(Direction.W).Extend();
+		}else{
+			_armManager.GetArm(Direction.W).Retract();
+		}
+		if(InputController.FaceButtonEastPressed(false)){
+			_armManager.GetArm(Direction.E).Extend();
+		}else{
+			_armManager.GetArm(Direction.E).Retract();
+		}
 
 	}
 

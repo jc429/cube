@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 
 public enum Direction {
-	N, E, S, W
+	N = 0, 
+	E = 1, 
+	S = 2, 
+	W = 3
 }
 
 public static class DirectionExtensions {
@@ -9,11 +12,11 @@ public static class DirectionExtensions {
 		return (int)direction < 2 ? (direction + 2) : (direction - 2);
 	}
 
-	public static Direction Previous (this Direction direction) {
+	public static Direction NextCCW (this Direction direction) {
 		return direction == Direction.N ? Direction.W : (direction - 1);
 	}
 
-	public static Direction Next (this Direction direction) {
+	public static Direction NextCW (this Direction direction) {
 		return direction == Direction.W ? Direction.N : (direction + 1);
 	}
 

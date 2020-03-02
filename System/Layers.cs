@@ -4,6 +4,10 @@ using UnityEngine;
 
 public static class Layers {
 
+	public static LayerMask GroundMask{
+		get{ return GetSolidsMask(false); }
+	}
+
 	public static LayerMask GetSolidsMask(bool ignorePlatforms) {
 		LayerMask groundmask = 0;
 		//have fun hard coding layers here 

@@ -7,6 +7,9 @@ public class ArmManager : MonoBehaviour
 	Rigidbody _rigidbody{
 		get{ return GetComponent<Rigidbody>(); }
 	}
+	PlayerController _controller{
+		get{ return GetComponent<PlayerController>(); }
+	}
 	Movement _movement{
 		get{ return GetComponent<Movement>(); }
 	}
@@ -31,7 +34,7 @@ public class ArmManager : MonoBehaviour
 	public BoxArm GetArm(Direction dir){
 		int armNo = (int)dir;
 		int offset = 0;
-		switch(_movement.Orientation){
+		switch(_controller.Orientation){
 			case Direction.N:
 			default:
 				offset = 0;

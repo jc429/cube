@@ -12,7 +12,7 @@ public class GameController : MonoBehaviour
 	public static ParticleController particleController;
 
 
-	public Movement player;
+	public PlayerController player;
 
 	public OptionsMenu optionsMenu;
 	public PauseMenu pauseMenu;

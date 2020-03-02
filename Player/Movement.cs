@@ -23,7 +23,6 @@ public class Movement : MonoBehaviour
 		get{ return GetComponent<ArmManager>(); }
 	}
 
-	int gMask = Layers.GetSolidsMask(true);
 	public GameObject model;
 
 
@@ -101,7 +100,7 @@ public class Movement : MonoBehaviour
 			{
 				_rigidbody.AddForce(dashSpeed * curMoveDir.ToVector3() * Time.deltaTime, ForceMode.VelocityChange);
 				float hitDist;
-				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.8f, out hitDist, gMask);
+				bool rayHit = CastRayStack(transform.position, curMoveDir, 0.8f, out hitDist, Layers.GroundMask);
 				if(rayHit){
 					transform.position += curMoveDir.ToVector3() * (hitDist - 0.5f);
 					_controller.EndDash();
@@ -116,7 +115,7 @@ public class Movement : MonoBehaviour
 		ClearMovementParameters();
 		startPos = transform.position;
 		Vector3 dir = d.ToVector3();
-		bool rayHit = CastRayStack(startPos, dir, 1, gMask);
+		bool rayHit = CastRayStack(startPos, dir, 1, Layers.GroundMask);
 		if(!rayHit){	//if the space forward is free
 			endPos = startPos + dir;
 			stepTimer.SetDuration(stepDuration);
@@ -136,7 +135,7 @@ public class Movement : MonoBehaviour
 		else{
 			Direction d2 = (s == Spin.CW) ? d.NextCCW() : d.NextCW();
 			dir = d2.ToVector3();
-			rayHit = CastRayStack(startPos, dir, 1, gMask);
+			rayHit = CastRayStack(startPos, dir, 1, Layers.GroundMask);
 			if(!rayHit){
 				_controller.SetFloorDir(d);
 				endPos = startPos + dir;
@@ -159,7 +158,7 @@ public class Movement : MonoBehaviour
 
 	bool CheckFollowThrough(){
 		bool doneMoving = false;
-		bool rayHit = CastRayStack(transform.position, curMoveDir, 1, gMask);
+		bool rayHit = CastRayStack(transform.position, curMoveDir, 1, Layers.GroundMask);
 		if(rayHit){
 			doneMoving = true;
 			//floorDir = curMoveDir;
@@ -167,7 +166,7 @@ public class Movement : MonoBehaviour
 		}
 
 		Vector3 dir = _controller.FloorDir.ToVector3();
-		rayHit = CastRayStack(transform.position, dir, 1, gMask);
+		rayHit = CastRayStack(transform.position, dir, 1, Layers.GroundMask);
 		if(!rayHit){		//no ground below us
 			startPos = transform.position;
 			endPos = startPos + dir;
@@ -198,7 +197,7 @@ public class Movement : MonoBehaviour
 
 	public bool AttemptDashMovement(Direction dir){
 		ClearMovementParameters();
-		bool rayHit = CastRayStack(transform.position, dir, 1, gMask);
+		bool rayHit = CastRayStack(transform.position, dir, 1, Layers.GroundMask);
 		if(rayHit){
 			return false;
 		}

@@ -69,7 +69,6 @@ public class PlayerController : MonoBehaviour
 			CheckArmInputs();
 		}
 
-		
 		if(inputHeld){
 			if(InputController.GetDirectionHeld() != holdDir.ToVector3()){
 				inputHeld = false;

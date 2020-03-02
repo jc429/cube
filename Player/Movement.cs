@@ -177,10 +177,12 @@ public class Movement : MonoBehaviour
 			if(currentSpin == Spin.CW){
 				_controller.SetFloorDir(_controller.FloorDir.NextCW());
 				endRotation = startRotation * Quaternion.Euler(0, 0, -90);
+				_controller.Orientation = _controller.Orientation.NextCW();
 			}
 			else if(currentSpin == Spin.CCW){
 				_controller.SetFloorDir(_controller.FloorDir.NextCCW());
 				endRotation = startRotation * Quaternion.Euler(0, 0, 90);
+				_controller.Orientation = _controller.Orientation.NextCCW();
 			}
 			moveState = MoveState.Stepping;
 		}

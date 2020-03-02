@@ -18,11 +18,18 @@ public enum InputID{
 	Reset				= (1<<12)
 }
 
+public enum ButtonState{
+	Active,
+	Pressed,
+	Released
+}
+
 public static class InputController {
 
 	static int inputQueueLength = 10;
 
-	static ushort currentInputs;
+	static ushort currentInputs = 0;
+	static ushort previousInputs = 0;
 	
 	static List<ushort> inputQueue = new List<ushort>();
 
@@ -53,7 +60,7 @@ public static class InputController {
 		inputs |= (Input.GetButtonDown("Pause")) ? (ushort)InputID.Pause : (ushort)0;
 		inputs |= (Input.GetButtonDown("Reset")) ? (ushort)InputID.Reset : (ushort)0;
 
-
+		previousInputs = currentInputs;
 		currentInputs = inputs; 
 		inputQueue.Add(inputs);
 		if(inputQueue.Count > inputQueueLength){
@@ -64,7 +71,6 @@ public static class InputController {
 	public static bool CheckQueuedInput(InputID input){
 		return CheckQueuedInput((ushort)input);
 	}
-
 	public static bool CheckQueuedInput(ushort input){
 		if(inputQueue.Count < 1){
 			return false;
@@ -77,12 +83,55 @@ public static class InputController {
 		return false;
 	}
 
+	public static bool CheckQueuedInputPressed(InputID input){
+		return CheckQueuedInputPressed((ushort)input);
+	}
+	public static bool CheckQueuedInputPressed(ushort input){
+		if(inputQueue.Count < 2){
+			return false;
+		}
+		for(int i = inputQueue.Count - 2; i >= 0; i--){
+			if((inputQueue[i] & input) == 0 && (inputQueue[i+1] & input) != 0 ){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static bool CheckQueuedInputReleased(InputID input){
+		return CheckQueuedInputReleased((ushort)input);
+	}
+	public static bool CheckQueuedInputReleased(ushort input){
+		if(inputQueue.Count < 2){
+			return false;
+		}
+		for(int i = inputQueue.Count - 2; i >= 0; i--){
+			if((inputQueue[i] & input) != 0 && (inputQueue[i+1] & input) == 0 ){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static bool CheckCurrentInput(InputID input){
 		return CheckCurrentInput((ushort)input);
 	}
-
 	public static bool CheckCurrentInput(ushort input){
 		return ((currentInputs & input) != 0);
+	}
+
+	public static bool CheckCurrentInputPressed(InputID input){
+		return CheckCurrentInputPressed((ushort)input);
+	}
+	public static bool CheckCurrentInputPressed(ushort input){
+		return ((currentInputs & input) != 0 && (previousInputs & input) == 0);
+	}
+
+	public static bool CheckCurrentInputReleased(InputID input){
+		return CheckCurrentInputReleased((ushort)input);
+	}
+	public static bool CheckCurrentInputReleased(ushort input){
+		return ((currentInputs & input) == 0 && (previousInputs & input) != 0);
 	}
 
 	public static float GetAxisHorizontal(){
@@ -136,35 +185,51 @@ public static class InputController {
 
 	/**********************************************************************************/
 
-	public static bool FaceButtonNorthPressed(bool queued = true){
-		if(queued){
-			return CheckQueuedInput(InputID.FaceN);
-		}else{
-			return CheckCurrentInput(InputID.FaceN);
+	public static bool FaceButtonNorth(ButtonState state, bool queued = true){
+		switch(state){
+			case ButtonState.Pressed:
+				return queued ? CheckQueuedInputPressed(InputID.FaceN) : CheckCurrentInputPressed(InputID.FaceN);
+			case ButtonState.Released:
+				return queued ? CheckQueuedInputReleased(InputID.FaceN) : CheckCurrentInputReleased(InputID.FaceN);
+			case ButtonState.Active:
+			default:
+				return queued ? CheckQueuedInput(InputID.FaceN) : CheckCurrentInput(InputID.FaceN);
 		}
 	}
 
-	public static bool FaceButtonSouthPressed(bool queued = true){
-		if(queued){
-			return CheckQueuedInput(InputID.FaceS);
-		}else{
-			return CheckCurrentInput(InputID.FaceS);
+	public static bool FaceButtonSouth(ButtonState state, bool queued = true){
+		switch(state){
+			case ButtonState.Pressed:
+				return queued ? CheckQueuedInputPressed(InputID.FaceS) : CheckCurrentInputPressed(InputID.FaceS);
+			case ButtonState.Released:
+				return queued ? CheckQueuedInputReleased(InputID.FaceS) : CheckCurrentInputReleased(InputID.FaceS);
+			case ButtonState.Active:
+			default:
+				return queued ? CheckQueuedInput(InputID.FaceS) : CheckCurrentInput(InputID.FaceS);
 		}
 	}
 
-	public static bool FaceButtonWestPressed(bool queued = true){
-		if(queued){
-			return CheckQueuedInput(InputID.FaceW);
-		}else{
-			return CheckCurrentInput(InputID.FaceW);
+	public static bool FaceButtonWest(ButtonState state, bool queued = true){
+		switch(state){
+			case ButtonState.Pressed:
+				return queued ? CheckQueuedInputPressed(InputID.FaceW) : CheckCurrentInputPressed(InputID.FaceW);
+			case ButtonState.Released:
+				return queued ? CheckQueuedInputReleased(InputID.FaceW) : CheckCurrentInputReleased(InputID.FaceW);
+			case ButtonState.Active:
+			default:
+				return queued ? CheckQueuedInput(InputID.FaceW) : CheckCurrentInput(InputID.FaceW);
 		}
 	}
 
-	public static bool FaceButtonEastPressed(bool queued = true){
-		if(queued){
-			return CheckQueuedInput(InputID.FaceE);
-		}else{
-			return CheckCurrentInput(InputID.FaceE);
+	public static bool FaceButtonEast(ButtonState state, bool queued = true){
+		switch(state){
+			case ButtonState.Pressed:
+				return queued ? CheckQueuedInputPressed(InputID.FaceE) : CheckCurrentInputPressed(InputID.FaceE);
+			case ButtonState.Released:
+				return queued ? CheckQueuedInputReleased(InputID.FaceE) : CheckCurrentInputReleased(InputID.FaceE);
+			case ButtonState.Active:
+			default:
+				return queued ? CheckQueuedInput(InputID.FaceE) : CheckCurrentInput(InputID.FaceE);
 		}
 	}
 

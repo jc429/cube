@@ -14,10 +14,21 @@ public class ArmManager : MonoBehaviour
 		get{ return GetComponent<Movement>(); }
 	}
 
-	
 	[SerializeField]
 	[NamedArrayAttribute (new string[] {"Up", "Right", "Down", "Left"})]
 	BoxArm[] arms;
+
+	public bool ArmMoving{
+		get{
+			for(int i = 0; i < 4; i++){
+				if(arms[i].IsMoving){
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
 
 	// Start is called before the first frame update
 	void Start()

@@ -43,6 +43,16 @@ public class PlayerController : MonoBehaviour
 	[SerializeField]
 	[NamedArrayAttribute (new string[] {"North", "East", "South", "West"})]
 	bool[] floorsTouching = {false, false, false, false};
+	bool TouchingFloor{
+		get{
+			for(int i = 0; i < 4; i++){
+				if(floorsTouching[i]){
+					return true;
+				}
+			}
+			return false;
+		}
+	}
 	Direction floorDir;
 	public Direction FloorDir{
 		get{ return floorDir; }
@@ -54,6 +64,12 @@ public class PlayerController : MonoBehaviour
 	void Start()
 	{
 		GameController.instance.player = this;
+		CheckFloor();
+		for(Direction d = Direction.N; d < Direction.W; d++){
+			if(floorsTouching[(int)d]){
+				floorDir = d;
+			}
+		}
 	}
 
 	// Update is called once per frame
@@ -63,8 +79,8 @@ public class PlayerController : MonoBehaviour
 		if(_movement.IsMoving){
 			_movement.UpdateMovement();
 		}
-		else{
-			_movement.AlignToGrid();
+		else if(!_armManager.ArmMoving){
+			//_movement.AlignToGrid();
 			AttemptMovement();
 			CheckArmInputs();
 		}
@@ -189,26 +205,54 @@ public class PlayerController : MonoBehaviour
 	}
 
 	void CheckArmInputs(){
-		if(InputController.FaceButtonNorthPressed(false)){
-			_armManager.GetArm(Direction.N).Extend();
-		}else{
-			_armManager.GetArm(Direction.N).Retract();
+		Direction buttonDir = Direction.N;
+		bool faceButtonPressed = false;
+		if(InputController.FaceButtonNorth(ButtonState.Pressed)){
+			buttonDir = Direction.N;
+			faceButtonPressed = true; 
 		}
-		if(InputController.FaceButtonSouthPressed(false)){
-			_armManager.GetArm(Direction.S).Extend();
-		}else{
-			_armManager.GetArm(Direction.S).Retract();
+		else if(InputController.FaceButtonEast(ButtonState.Pressed)){
+			buttonDir = Direction.E;
+			faceButtonPressed = true; 
 		}
-		if(InputController.FaceButtonWestPressed(false)){
-			_armManager.GetArm(Direction.W).Extend();
-		}else{
-			_armManager.GetArm(Direction.W).Retract();
+		else if(InputController.FaceButtonSouth(ButtonState.Pressed)){
+			buttonDir = Direction.S;
+			faceButtonPressed = true; 
 		}
-		if(InputController.FaceButtonEastPressed(false)){
-			_armManager.GetArm(Direction.E).Extend();
-		}else{
-			_armManager.GetArm(Direction.E).Retract();
+		else if(InputController.FaceButtonWest(ButtonState.Pressed)){
+			buttonDir = Direction.W;
+			faceButtonPressed = true; 
 		}
-
+		if(faceButtonPressed){
+			BoxArm arm = _armManager.GetArm(buttonDir);
+			bool hit = _movement.CastRayStack(transform.position, buttonDir, 1f, Layers.GroundMask);
+			if(!arm.IsExtended){
+				//attempt to extend arm
+				if(hit){
+					//if there is a wall in the way see if we can move the cube
+					bool backHit = _movement.CastRayStack(transform.position, buttonDir.Opposite(), 1f, Layers.GroundMask);
+					if(!backHit){
+						//space is free, move cube away
+						arm.moveBody = true;
+						arm.Extend();
+					}
+					//else we cant do anything
+				}
+				else{
+					arm.Extend();
+				}
+			}
+			else{
+				//attempt to retract arm
+				bool armHit = _movement.CastRayStack(transform.position + buttonDir.ToVector3(), buttonDir, 1f, Layers.GroundMask);
+				if(!TouchingFloor && armHit){
+					arm.moveBody = true;
+					arm.Retract();
+				}
+				else{
+					arm.Retract();
+				}
+			}
+		}
 	}
 }

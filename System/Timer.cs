@@ -27,6 +27,10 @@ public class Timer {
 		isActive = active;
 	}
 
+	public void Activate(){
+		isActive = true;
+	}
+
 	public void AdvanceTimer(float dTime){
 		time += dTime;
 		if(time >= duration){
